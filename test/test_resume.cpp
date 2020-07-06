@@ -40,6 +40,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/bencode.hpp"
 #include "libtorrent/read_resume_data.hpp"
 #include "libtorrent/write_resume_data.hpp"
+#include "libtorrent/aux_/path.hpp"
 #include "setup_transfer.hpp"
 
 #include "test.hpp"
@@ -1096,6 +1097,7 @@ namespace test_mode {
 #endif
 	constexpr test_mode_t missing_files = 5_bit;
 	constexpr test_mode_t pieces_have_all = 6_bit;
+	constexpr test_mode_t missing_all_files = 7_bit;
 }
 
 namespace {
@@ -1110,8 +1112,14 @@ void test_seed_mode(test_mode_t const flags)
 
 	if (flags & test_mode::missing_files)
 	{
-		lt::error_code ec;
 		TEST_CHECK(::remove("./test_resume/tmp2") == 0);
+	}
+
+	if (flags & test_mode::missing_all_files)
+	{
+		lt::error_code ec;
+		lt::remove_all("./test_resume", ec);
+		TEST_CHECK(!ec);
 	}
 
 	entry rd;
@@ -1179,6 +1187,7 @@ void test_seed_mode(test_mode_t const flags)
 	if (flags & (test_mode::file_prio
 		| test_mode::piece_prio
 		| test_mode::missing_files
+		| test_mode::missing_all_files
 		| test_mode::pieces_have))
 	{
 		std::vector<alert*> alerts;
@@ -1268,6 +1277,11 @@ TORRENT_TEST(seed_mode_missing_files_deprecated)
 	test_seed_mode(test_mode::missing_files | test_mode::deprecated);
 }
 
+TORRENT_TEST(seed_mode_missing_all_files_deprecated)
+{
+	test_seed_mode(test_mode::missing_all_files | test_mode::deprecated);
+}
+
 TORRENT_TEST(seed_mode_missing_files_with_pieces_deprecated)
 {
 	test_seed_mode(test_mode::missing_files | test_mode::pieces_have | test_mode::deprecated);
@@ -1302,6 +1316,11 @@ TORRENT_TEST(seed_mode_preserve)
 TORRENT_TEST(seed_mode_missing_files)
 {
 	test_seed_mode(test_mode::missing_files);
+}
+
+TORRENT_TEST(seed_mode_missing_all_files)
+{
+	test_seed_mode(test_mode::missing_all_files);
 }
 
 TORRENT_TEST(seed_mode_missing_files_with_pieces)

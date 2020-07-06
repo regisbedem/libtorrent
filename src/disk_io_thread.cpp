@@ -2583,6 +2583,21 @@ constexpr disk_job_flags_t disk_interface::cache_hit;
 		// suggests we're starting without any resume data
 		bool const no_resume_data = !seed_mode && rd->have_pieces.empty();
 
+		// if we're in seed-mode, and the resume data check failed, we must tell
+		// torrent that it's not in seed mode anymore
+		if (!verify_success && seed_mode)
+		{
+			// always initialize the storage
+			storage_error se;
+			j->storage->initialize(se);
+			if (se)
+			{
+				j->error = se;
+				return status_t::fatal_disk_error;
+			}
+			return status_t::need_full_check;
+		}
+
 		// if we don't have any resume data, return
 		// or if error is set and return value is 'no_error' or 'need_full_check'
 		// the error message indicates that the fast resume data was rejected
